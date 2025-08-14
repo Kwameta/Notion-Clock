@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Notion Clock</title>
+<style>
+  :root { --size: 56px; }
+  html,body{height:100%;margin:0;background:transparent}
+  body{display:grid;place-items:center;font:600 var(--size)/1 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  #time{letter-spacing:.04em}
+</style></head><body>
+  <div id="time">00:00</div>
+<script>
+  const el = document.getElementById('time');
+  function tick(){
+    const d = new Date();
+    // 24h HH:MM — change hour12:true for AM/PM
+    el.textContent = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
+  }
+  tick(); setInterval(tick, 500);
+</script></body></html>
