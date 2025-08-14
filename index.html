@@ -1,19 +1,122 @@
-<!doctype html><html><head><meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Notion Clock</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Booty Bay Clock</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Pirata+One&display=swap" rel="stylesheet">
 <style>
-  :root { --size: 56px; }
-  html,body{height:100%;margin:0;background:transparent}
-  body{display:grid;place-items:center;font:600 var(--size)/1 system-ui,Segoe UI,Roboto,Helvetica,Arial}
-  #time{letter-spacing:.04em}
-</style></head><body>
-  <div id="time">00:00</div>
+:root{
+  --gold:#d8b46a;        /* time color */
+  --shadow:#000000a6;
+  --size:86;             /* base time size in px */
+  --title-size:40;
+  --pad:18;
+  --radius:18;
+  --show-frame:1;        /* 1=ornate frame, 0=plain */
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:transparent}
+body{display:grid;place-items:center;color:var(--gold);font-family:"Cinzel", ui-serif, Georgia, serif}
+.wrapper{width:min(92vw,780px);padding:6px 12px 18px}
+.header{display:flex;align-items:center;gap:12px;margin:4px 2px 12px}
+.flag{display:inline-grid;place-items:center;width:38px;height:26px;border-radius:4px;background:#151515;border:1px solid #2e2e2e;box-shadow:0 0 0 2px #0b0b0b inset}
+.flag svg{width:22px;height:22px;fill:var(--gold)}
+.title{font-family:"Pirata One", system-ui, serif;font-size:calc(var(--title-size)*1px);line-height:1;text-shadow:0 1px 0 #000,0 3px 10px var(--shadow)}
+.rule{height:1px;background:linear-gradient(90deg,transparent,#54401f 30%,#7a5a2a 50%,#54401f 70%,transparent);opacity:.6;margin-top:8px}
+.card{
+  display:flex;align-items:center;gap:18px;
+  padding:calc(var(--pad)*1px) calc((var(--pad)+6)*1px);
+  border-radius:calc(var(--radius)*1px);
+  background:rgba(10,10,10,.35);
+  box-shadow:
+    0 2px 12px rgba(0,0,0,.55),
+    0 0 0 calc(var(--show-frame)*1px) #2b2213 inset,
+    0 0 0 calc(var(--show-frame)*2px) #1a1510 inset,
+    0 0 0 calc(var(--show-frame)*3px) #4a3a20 inset;
+  border:solid calc(var(--show-frame)*1px) #2c2214;
+}
+.icon{display:inline-grid;place-items:center;width:38px;height:38px}
+.icon svg{width:28px;height:28px;fill:var(--gold);filter:drop-shadow(0 2px 2px var(--shadow))}
+.time{
+  font-weight:800;font-size:calc(var(--size)*1px);letter-spacing:.02em;
+  color:var(--gold);
+  text-shadow:0 1px 0 #000,0 2px 4px rgba(0,0,0,.6),0 0 24px rgba(216,180,106,.15);
+}
+.sub{margin-top:8px;font-size:14px;opacity:.75}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main class="wrapper" id="root">
+  <div class="header">
+    <div class="flag" id="flag" aria-hidden="true">
+      <!-- little pirate flag -->
+      <svg viewBox="0 0 24 24"><path d="M3 2h2v20H3V2zm5.5 1.5c2.4 0 4.1-1.5 6.5-1.5 1.4 0 2.5.3 3 .6V14c-.7-.3-1.6-.6-3-.6-2.4 0-4.1 1.5-6.5 1.5-1.4 0-2.5-.3-3-.6V3.1c.7.3 1.6.6 3 .6z"/></svg>
+    </div>
+    <div class="title" id="title">Booty Bay</div>
+  </div>
+  <div class="rule"></div>
+
+  <section class="card">
+    <div class="icon" id="icon" aria-hidden="true">
+      <!-- anchor icon -->
+      <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v4.1a5 5 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM5 22a1 1 0 0 1-.7-1.7l4.2-4.3a7 7 0 0 0 7 0l4.2 4.3A1 1 0 0 1 19 22l-3.3-3.3a8.9 8.9 0 0 1-7.4 0L5 22z"/></svg>
+    </div>
+    <div class="time" id="time">00:00</div>
+  </section>
+
+  <div class="sub hidden" id="date"></div>
+</main>
+
 <script>
-  const el = document.getElementById('time');
-  function tick(){
-    const d = new Date();
-    // 24h HH:MM — change hour12:true for AM/PM
-    el.textContent = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
+/* --- URL options ---
+   ?title=Booty%20Bay        (set empty `title=` to hide)
+   &color=D8B46A             (hex with or without #)
+   &size=96                  (px for time)
+   &ampm=1                    (12h clock)
+   &seconds=1                (show seconds)
+   &date=1                   (show date under time)
+   &icon=0                   (hide anchor)
+   &frame=0                  (hide ornate frame)
+*/
+const q = new URLSearchParams(location.search);
+const hour12 = q.get('ampm') === '1';
+const showSeconds = q.get('seconds') === '1';
+const showDate = q.get('date') === '1';
+const size = Number(q.get('size'))||0;
+const color = q.get('color');
+const title = q.get('title');
+const hideIcon = q.get('icon') === '0';
+const frame = q.get('frame');
+
+if (size) document.documentElement.style.setProperty('--size', size);
+if (frame === '0') document.documentElement.style.setProperty('--show-frame','0');
+if (color){
+  const c = color.startsWith('#') ? color : '#'+color;
+  document.documentElement.style.setProperty('--gold', c);
+}
+if (title !== null){
+  const t = document.getElementById('title');
+  if (title === '') t.classList.add('hidden');
+  else t.textContent = title;
+}
+if (hideIcon) document.getElementById('icon').classList.add('hidden');
+
+const timeEl = document.getElementById('time');
+const dateEl = document.getElementById('date');
+if (showDate) dateEl.classList.remove('hidden');
+
+function tick(){
+  const d = new Date();
+  const opts = {hour:'2-digit', minute:'2-digit', hour12};
+  if (showSeconds) opts.second = '2-digit';
+  timeEl.textContent = d.toLocaleTimeString([], opts);
+  if (showDate){
+    dateEl.textContent = d.toLocaleDateString([], {weekday:'short', year:'numeric', month:'short', day:'2-digit'});
   }
-  tick(); setInterval(tick, 500);
-</script></body></html>
+}
+tick(); setInterval(tick, 500);
+</script>
+</body>
+</html>
